@@ -2,8 +2,8 @@
 
 namespace AdventOfCodeFoundation.Solvers._2015
 {
-    [Solves("2015/12/1")]
-    internal class Day1Solver2015 : ISolver
+    [Solves("2023/12/1")]
+    internal class Day1Solver2023 : ISolver
     {
         public async Task<string> SolvePartOne(Input input)
         {

@@ -9,9 +9,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Inputs\2020\" />
-    <Folder Include="Inputs\2022\01\" />
-    <Folder Include="Solvers\2022\" />
+    <Compile Remove="Inputs\2020\**" />
+    <Compile Remove="Inputs\2022\**" />
+    <Compile Remove="Solvers\2022\**" />
+    <EmbeddedResource Remove="Inputs\2020\**" />
+    <EmbeddedResource Remove="Inputs\2022\**" />
+    <EmbeddedResource Remove="Solvers\2022\**" />
+    <None Remove="Inputs\2020\**" />
+    <None Remove="Inputs\2022\**" />
+    <None Remove="Solvers\2022\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Solvers\2015\" />
   </ItemGroup>
 
 </Project>
