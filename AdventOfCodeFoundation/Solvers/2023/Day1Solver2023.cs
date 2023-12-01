@@ -10,9 +10,22 @@ namespace AdventOfCodeFoundation.Solvers._2023
         public async Task<string> SolvePartOne(Input input)
         {
             var cDoc = await input.GetRawInput();
-            var arr = cDoc.Split("\r\n");
+            var inputArr = cDoc.Split("\r\n");
+            var resultArray = ParseDigits(inputArr);
+            return resultArray.Sum().ToString();
+        }
+        
+        public async Task<string> SolvePartTwo(Input input)
+        {
+            var cDoc = await input.GetRawInput();
+            var inputArr = ReplaceStrings(cDoc).Split("\r\n");
+            var resultArray = ParseDigits(inputArr);
+            return resultArray.Sum().ToString();
+        }
+        private List<int> ParseDigits(string[] input)
+        {
             var digitArr = new List<int>();
-            foreach (var s in arr)
+            foreach (var s in input)
             {
                 var digits = s.Where(c => char.IsDigit(c)).Select(x => x.ToString()).ToList();
 
@@ -24,27 +37,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 }
                 digitArr.Add(int.Parse(t + t2));
             }
-            // var calc = digitArr.Sum(x => x.Item1 + x.Item2);
-            return digitArr.Sum().ToString();
-        }
-
-        public async Task<string> SolvePartTwo(Input input)
-        {
-            var cDoc = await input.GetRawInput();
-
-            var arr = ReplaceStrings(cDoc.ToLower()).Split("\r\n"); ;
-            var digitArr = new List<int>();
-            foreach (var s in arr)
-            {   
-                var digits = s.Where(char.IsDigit).Select(x => x.ToString()).ToList();
-                var uD = digits.Distinct();
-                if(digits.Any() == false) { continue; }
-                var t = digits.First();
-                var t2 = digits.Last();
-                var sd = digits.Count>1 ? t+t2 : t;
-                digitArr.Add(int.Parse(sd));
-            }
-            return digitArr.Sum().ToString();
+            return digitArr;
         }
         string ReplaceStrings(string input)
         {
