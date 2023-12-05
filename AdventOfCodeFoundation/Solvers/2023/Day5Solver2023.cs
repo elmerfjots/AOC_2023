@@ -32,18 +32,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 }
             }
 
-
-            foreach(var m in maps)
-            {
-                var ordered = m.Values.OrderBy(x => x.SourceMinMax);
-                var newRanges = new L
-            }
-
-
-
-
             (long initial, long minValue) minLocation = (-1, long.MaxValue);
-            foreach (var s in seeds)
+            foreach (var s in ranges)
             {
                 var l = GetMinLocation(s.Value, maps); ;
                 minLocation = (minLocation.minValue > l) ? (s.Key, l) : minLocation;
