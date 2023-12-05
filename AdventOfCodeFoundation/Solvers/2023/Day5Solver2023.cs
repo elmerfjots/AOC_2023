@@ -6,12 +6,19 @@ namespace AdventOfCodeFoundation.Solvers._2023
     [Solves("2023/12/5")]
     internal class Day5Solver2023 : ISolver
     {
+        private List<Map> maps;
         public async Task<string> SolvePartOne(Input input)
         {
             var raw = await input.GetRawInput();
             var rows = raw.Split("\r\n").Where(x => !x.Equals("")).ToList();
+            maps = ParseMaps(rows);
             var seeds = rows.First().Split(": ").Last().Trim().Split(" ").Select(x => long.Parse(x)).ToList();
-            var minLocation = GetMinLocation(seeds, ParseMaps(rows));
+            var minLocation = long.MaxValue;
+            foreach (var s in seeds)
+            {
+                var v = GetMinLocation(s);
+                minLocation = (v < minLocation) ? v : minLocation;
+            }
             return minLocation.ToString();
         }
         public async Task<string> SolvePartTwo(Input input)
@@ -19,9 +26,10 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var raw = await input.GetRawInput();
             var rows = raw.Split("\r\n").Where(x => !x.Equals("")).ToList();
             var seedRaw = rows.First().Split(": ").Last().Trim().Split(" ").Select(long.Parse).ToList();
-            var maps = ParseMaps(rows);
+            maps = ParseMaps(rows);
             var minimum = long.MaxValue;
             object lockObject = new object();
+            //Maybe iterate trough maps instead of seeds?
             for (var i = 0; i < seedRaw.Count; i += 2)
             {
                 var start = seedRaw[i];
@@ -30,7 +38,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                     new ParallelOptions { MaxDegreeOfParallelism = 12 },
                    s =>
                    {
-                       var lMinimum = GetMinLocation(s, maps);
+                       var lMinimum = GetMinLocation(s);
                        lock (lockObject)
                        {
                            minimum = minimum > lMinimum ? lMinimum : minimum;
@@ -58,23 +66,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             return new List<Map> { seedToSoilMap, soilToFertilizerMap, fertilizerToWaterMap, waterToLightMap, lightToTemperatureMap, temperatureToHumidityMap, himidityToLocationMap };
         }
-        private long GetMinLocation(List<long> seeds, List<Map> maps)
-        {
-            var minLocation = long.MaxValue;
-            foreach (var s in seeds)
-            {
-                var l1 = maps[0].GetValueForLong(s);
-                var l2 = maps[1].GetValueForLong(l1);
-                var l3 = maps[2].GetValueForLong(l2);
-                var l4 = maps[3].GetValueForLong(l3);
-                var l5 = maps[4].GetValueForLong(l4);
-                var l6 = maps[5].GetValueForLong(l5);
-                var l7 = maps[6].GetValueForLong(l6);
-                minLocation = (l7 < minLocation) ? l7 : minLocation;
-            }
-            return minLocation;
-        }
-        private long GetMinLocation(long seed, List<Map> maps)
+        private long GetMinLocation(long seed)
         {
             var l1 = maps[0].GetValueForLong(seed);
             var l2 = maps[1].GetValueForLong(l1);
@@ -83,8 +75,6 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var l5 = maps[4].GetValueForLong(l4);
             var l6 = maps[5].GetValueForLong(l5);
             var l7 = maps[6].GetValueForLong(l6);
-            // minLocation = (l7 < minLocation) ? l7 : minLocation;
-
             return l7;
         }
         private class Map
