@@ -1,4 +1,5 @@
 ﻿using AdventOfCodeFoundation.IO;
+using System.Collections.Concurrent;
 
 namespace AdventOfCodeFoundation.Solvers._2023
 {
@@ -18,28 +19,25 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var raw = await input.GetRawInput();
             var rows = raw.Split("\r\n").Where(x => !x.Equals("")).ToList();
             var seedRaw = rows.First().Split(": ").Last().Trim().Split(" ").Select(long.Parse).ToList();
-            var ranges = new Dictionary<long, List<long>>();
             var maps = ParseMaps(rows);
+            var minimum = long.MaxValue;
+            object lockObject = new object();
             for (var i = 0; i < seedRaw.Count; i += 2)
             {
                 var start = seedRaw[i];
                 var range = seedRaw[i + 1];
-                ranges.Add(start, new List<long>());
-                //seeds.Add(start);
-                for (var k = start; k < start + range; k++)
-                {
-                    ranges[start].Add(k);
-                }
+                Parallel.For(start, start + range,
+                    new ParallelOptions { MaxDegreeOfParallelism = 12 },
+                   s =>
+                   {
+                       var lMinimum = GetMinLocation(s, maps);
+                       lock (lockObject)
+                       {
+                           minimum = minimum > lMinimum ? lMinimum : minimum;
+                       }
+                   });
             }
-
-            (long initial, long minValue) minLocation = (-1, long.MaxValue);
-            foreach (var s in ranges)
-            {
-                var l = GetMinLocation(s.Value, maps); ;
-                minLocation = (minLocation.minValue > l) ? (s.Key, l) : minLocation;
-            }
-
-            return minLocation.ToString();
+            return minimum.ToString(); ;
         }
         private List<Map> ParseMaps(List<string> rows)
         {
@@ -76,9 +74,23 @@ namespace AdventOfCodeFoundation.Solvers._2023
             }
             return minLocation;
         }
+        private long GetMinLocation(long seed, List<Map> maps)
+        {
+            var l1 = maps[0].GetValueForLong(seed);
+            var l2 = maps[1].GetValueForLong(l1);
+            var l3 = maps[2].GetValueForLong(l2);
+            var l4 = maps[3].GetValueForLong(l3);
+            var l5 = maps[4].GetValueForLong(l4);
+            var l6 = maps[5].GetValueForLong(l5);
+            var l7 = maps[6].GetValueForLong(l6);
+            // minLocation = (l7 < minLocation) ? l7 : minLocation;
+
+            return l7;
+        }
         private class Map
         {
             public List<MapNode> Values { get; set; }
+            public List<MapNode> OrderedValues { get; set; }
             public Map(List<string> stringMap)
             {
                 Values = new List<MapNode>();
@@ -94,10 +106,12 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
                     Values.Add(new MapNode((sourceRangeStart, sourceRangeMax), (destinationRangeStart, destinationRangeMax)));
                 }
+                OrderedValues = Values.OrderBy(x => x.SourceMinMax.min).ToList();
             }
             public long GetValueForLong(long l)
             {
-                foreach (var v in Values)
+
+                foreach (var v in OrderedValues)
                 {
                     if (l >= v.SourceMinMax.min && l <= v.SourceMinMax.max)
                     {
