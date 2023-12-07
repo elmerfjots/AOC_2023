@@ -79,10 +79,34 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 {
                     allCards.Add(h);
                 }
-              
+
             }
-            var r = allCards.OrderBy(x=>x.SortKey);
-            return "";
+            var handsg = allCards.OrderByDescending(x => x.Score)
+                .GroupBy(x => x.Score);
+            var ranks = new Stack<CardHand>();
+            long sum = 0;
+            foreach (var group in handsg)
+            {
+                if (group.ToList().Count == 1)
+                {
+                    ranks.Push(group.First());
+                    continue;
+                }
+                var sorted = group.OrderBy(x => x.OriginalSortKey).ToList();
+                foreach (var card in sorted)
+                {
+                    ranks.Push(card);
+                }
+            }
+            var c = 1;
+            while (ranks.Any())
+            {
+                var card = ranks.Pop();
+                sum += card.Bid * c;
+                c++;
+            }
+
+            return sum.ToString();
         }
 
         class CardHand
@@ -90,6 +114,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
             public List<Card> Cards { get; set; }
             public int Bid { get; set; }
             public string SortKey { get; set; }
+
+            public string OriginalSortKey { get; set; }
             public int Score
             {
                 get
@@ -127,12 +153,11 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 //Contains Joker
                 if (jokerChange && Cards.Any(x => x.OriginalValue.Equals("J")))
                 {
+
                     CreateSubstitutions();
+
                 }
-                if (!jokerChange)
-                {
-                    EvaluateCards(Cards);
-                }
+                EvaluateCards(Cards);
             }
 
             public CardHand(List<Card> subCards, int bid)
@@ -149,22 +174,23 @@ namespace AdventOfCodeFoundation.Solvers._2023
                   .Where(x => x.x.Value == "J")
                   .Select(x => x.i)
                   .ToList();
-
-                var jCards = Cards.Count(x => x.Value == "J");
-
-                var dCards = Cards.DistinctBy(x => x.Value).ToList().Where(x => x.Value != "J");
-
-
-                foreach (var jidx in idxOfJ)
+                var dCards = Cards.DistinctBy(x => x.Value).ToList().Where(x => x.Value != "J").ToList();
+                foreach (var dc in dCards)
+                    //IT IS COPYING THE VARIABLE IN THE ARRAY :S
                 {
-
-                    foreach (var dc in dCards)
+                    var subCards = new List<Card>(Cards);
+                    foreach (var jidx in idxOfJ)
                     {
-                        var subCards = new List<Card>(Cards);
-                        subCards[jidx] = dc;
-                        subCards[jidx].OriginalValue = "J";
-                        Substitutions.Add(new CardHand(subCards, Bid));
+                        var cc = new Card(dc);
+
+                        cc.OriginalValue = "J";
+                        cc.ReEvaluateCard(dc.Value, true);
+                        subCards[jidx] = cc;
+
                     }
+                    var c = new CardHand(subCards, Bid);
+                    c.EvaluateCards(subCards);
+                    Substitutions.Add(c);
                 }
             }
 
@@ -178,7 +204,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 TwoPair = cardGroups.Count == 3;
                 OnePair = cardGroups.Count == 4;
                 HighCard = cardGroups.Count == 5;
-                SortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.OriginalValue]));
+                SortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.Value]));
+                OriginalSortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.OriginalValue]));
             }
             public override string ToString()
             {
@@ -192,11 +219,24 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             public string OriginalValue { get; set; }
             public Card() { }
+
+            public Card(Card copy)
+            {
+                Value = copy.Value;
+                IntValue = copy.IntValue;
+                OriginalValue = copy.Value;
+
+            }
             public Card(string input, bool jokerChange = false)
             {
 
                 Value = input;
                 OriginalValue = Value;
+                ReEvaluateCard(input, jokerChange);
+
+            }
+            public void ReEvaluateCard(string input, bool jokerChange)
+            {
                 var s = input.Replace("A", "14");
                 s = s.Replace("K", "13");
                 s = s.Replace("Q", "12");
