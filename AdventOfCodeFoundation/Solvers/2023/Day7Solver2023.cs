@@ -35,38 +35,17 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 .OrderByDescending(x => x.Score)
                 .GroupBy(x => x.Score);
             var sum = GetSumOfHands(hands);
-
             return sum.ToString();
         }
-
-
-
         public async Task<string> SolvePartTwo(Input input)
         {
             var raw = await input.GetRawInput();
             SortKeyDictionary["J"] = "N";
             var hands = raw.Split("\r\n")
                .Select(x => new CardHand(x, true)).Select(x => x.GetBestSubstitute()).ToList();
-            var allCards = new List<CardHand>();
-            //foreach (var h in hands)
-            //{
-            //    if (h.Substitutions.Any())
-            //    {
-            //        //Mangler en orderby score
-            //        var bestSubstitution = h.Substitutions.OrderByDescending(x => x.Score).First();
-            //        allCards.Add(bestSubstitution);
-            //    }
-            //    else
-            //    {
-            //        allCards.Add(h);
-            //    }
-
-            //}
-            var handsg = hands.OrderByDescending(x => x.Score)
+            var handsGroupedByScore = hands.OrderByDescending(x => x.Score)
                 .GroupBy(x => x.Score);
-            var ranks = new Stack<CardHand>();
-            long sum = GetSumOfHands(handsg);
-
+            long sum = GetSumOfHands(handsGroupedByScore);
             return sum.ToString();
         }
         private long GetSumOfHands(IEnumerable<IGrouping<int, CardHand>> hands)
@@ -128,7 +107,6 @@ namespace AdventOfCodeFoundation.Solvers._2023
             public bool HighCard { get; set; }
 
             public List<CardHand> Substitutions { get; set; }
-            public CardHand() { }
             public CardHand(string row, bool jokerChange = false)
             {
                 Substitutions = new List<CardHand>();
