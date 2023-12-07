@@ -34,58 +34,47 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 .Select(x => new CardHand(x))
                 .OrderByDescending(x => x.Score)
                 .GroupBy(x => x.Score);
-            long sum = 0;
-
-            var ranks = new Stack<CardHand>();
-            foreach (var group in hands)
-            {
-                if (group.ToList().Count == 1)
-                {
-                    ranks.Push(group.First());
-                    continue;
-                }
-                var sorted = group.OrderBy(x => x.SortKey).ToList();
-                foreach (var card in sorted)
-                {
-                    ranks.Push(card);
-                }
-            }
-            var c = 1;
-            while (ranks.Any())
-            {
-                var card = ranks.Pop();
-                sum += card.Bid * c;
-                c++;
-            }
+            var sum = GetSumOfHands(hands);
 
             return sum.ToString();
         }
+
+
 
         public async Task<string> SolvePartTwo(Input input)
         {
             var raw = await input.GetRawInput();
             SortKeyDictionary["J"] = "N";
             var hands = raw.Split("\r\n")
-               .Select(x => new CardHand(x, true)).ToList();
+               .Select(x => new CardHand(x, true)).Select(x => x.GetBestSubstitute()).ToList();
             var allCards = new List<CardHand>();
-            foreach (var h in hands)
-            {
-                if (h.Substitutions.Any())
-                {
-                    var bestSubstitution = h.Substitutions.OrderByDescending(x => x.SortKey).First();
-                    allCards.Add(bestSubstitution);
-                }
-                else
-                {
-                    allCards.Add(h);
-                }
+            //foreach (var h in hands)
+            //{
+            //    if (h.Substitutions.Any())
+            //    {
+            //        //Mangler en orderby score
+            //        var bestSubstitution = h.Substitutions.OrderByDescending(x => x.Score).First();
+            //        allCards.Add(bestSubstitution);
+            //    }
+            //    else
+            //    {
+            //        allCards.Add(h);
+            //    }
 
-            }
-            var handsg = allCards.OrderByDescending(x => x.Score)
+            //}
+            var handsg = hands.OrderByDescending(x => x.Score)
                 .GroupBy(x => x.Score);
             var ranks = new Stack<CardHand>();
+            long sum = GetSumOfHands(handsg);
+
+            return sum.ToString();
+        }
+        private long GetSumOfHands(IEnumerable<IGrouping<int, CardHand>> hands)
+        {
             long sum = 0;
-            foreach (var group in handsg)
+
+            var ranks = new Stack<CardHand>();
+            foreach (var group in hands)
             {
                 if (group.ToList().Count == 1)
                 {
@@ -105,8 +94,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 sum += card.Bid * c;
                 c++;
             }
-
-            return sum.ToString();
+            return sum;
         }
 
         class CardHand
@@ -176,7 +164,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                   .ToList();
                 var dCards = Cards.DistinctBy(x => x.Value).ToList().Where(x => x.Value != "J").ToList();
                 foreach (var dc in dCards)
-                    //IT IS COPYING THE VARIABLE IN THE ARRAY :S
+                //IT IS COPYING THE VARIABLE IN THE ARRAY :S
                 {
                     var subCards = new List<Card>(Cards);
                     foreach (var jidx in idxOfJ)
@@ -193,7 +181,16 @@ namespace AdventOfCodeFoundation.Solvers._2023
                     Substitutions.Add(c);
                 }
             }
-
+            public CardHand GetBestSubstitute()
+            {
+                if (Substitutions.Any())
+                {
+                    //Mangler en orderby score
+                    var bestSubstitution = Substitutions.OrderByDescending(x => x.Score).First();
+                    return bestSubstitution;
+                }
+                return this;
+            }
             public void EvaluateCards(List<Card> cards)
             {
                 var cardGroups = cards.OrderBy(x => x.IntValue).GroupBy(x => x.Value).ToList();
@@ -207,6 +204,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 SortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.Value]));
                 OriginalSortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.OriginalValue]));
             }
+
             public override string ToString()
             {
                 return string.Join("", Cards) + " " + Bid;
