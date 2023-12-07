@@ -10,25 +10,78 @@ namespace AdventOfCodeFoundation.Solvers._2023
     [Solves("2023/12/7")]
     internal class Day7Solver2023 : ISolver
     {
+        public static Dictionary<string, string> SortKeyDictionary = new Dictionary<string, string>()
+        {
+            {"A","A"},
+            {"K","B"},
+            {"Q","C"},
+            {"J","D"},
+            {"T","E"},
+            {"9","F"},
+            {"8","G"},
+            {"7","H"},
+            {"6","I"},
+            {"5","J"},
+            {"4","K"},
+            {"3","L"},
+            {"2","M"},
+
+        };
         public async Task<string> SolvePartOne(Input input)
         {
             var raw = await input.GetRawInput();
-            var rows = raw.Split("\r\n").ToList();
-            var cardHands = new List<CardHand>();
-            foreach (var row in rows)
+            var hands = raw.Split("\r\n")
+                .Select(x => new CardHand(x))
+                .OrderByDescending(x => x.Score)
+                .GroupBy(x => x.Score);
+            long sum = 0;
+
+            var ranks = new Stack<CardHand>();
+            foreach (var group in hands)
             {
-
-                cardHands.Add(new CardHand(row));
+                if (group.ToList().Count == 1)
+                {
+                    ranks.Push(group.First());
+                    continue;
+                }
+                var sorted = group.OrderBy(x => x.SortKey).ToList();
+                foreach (var card in sorted)
+                {
+                    ranks.Push(card);
+                }
             }
-            var winningHands =  cardHands.OrderBy(x=>x.Score);
+            var c = 1;
+            while (ranks.Any())
+            {
+                var card = ranks.Pop();
+                sum += card.Bid * c;
+                c++;
+            }
 
-            return "";
+            return sum.ToString();
         }
 
         public async Task<string> SolvePartTwo(Input input)
         {
             var raw = await input.GetRawInput();
-
+            SortKeyDictionary["J"] = "N";
+            var hands = raw.Split("\r\n")
+               .Select(x => new CardHand(x, true)).ToList();
+            var allCards = new List<CardHand>();
+            foreach (var h in hands)
+            {
+                if (h.Substitutions.Any())
+                {
+                    var bestSubstitution = h.Substitutions.OrderByDescending(x => x.SortKey).First();
+                    allCards.Add(bestSubstitution);
+                }
+                else
+                {
+                    allCards.Add(h);
+                }
+              
+            }
+            var r = allCards.OrderBy(x=>x.SortKey);
             return "";
         }
 
@@ -36,6 +89,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
         {
             public List<Card> Cards { get; set; }
             public int Bid { get; set; }
+            public string SortKey { get; set; }
             public int Score
             {
                 get
@@ -58,16 +112,65 @@ namespace AdventOfCodeFoundation.Solvers._2023
             public bool TwoPair { get; set; }
             public bool OnePair { get; set; }
             public bool HighCard { get; set; }
-            public CardHand(string row)
+
+            public List<CardHand> Substitutions { get; set; }
+            public CardHand() { }
+            public CardHand(string row, bool jokerChange = false)
             {
+                Substitutions = new List<CardHand>();
                 Bid = int.Parse(row.Split(" ").Last().Trim());
-                Cards = new List<Card>();
-                row = row.Split(" ").First().Trim();
-                foreach (var item in row)
+                Cards = row.Split(" ").First().Trim().Select(x => new Card(x.ToString(), jokerChange)).ToList();
+
+                //[x3][x2][x][J][y][y2][y3]
+                //Highest hand right, highest hand left
+
+                //Contains Joker
+                if (jokerChange && Cards.Any(x => x.OriginalValue.Equals("J")))
                 {
-                    Cards.Add(new Card(item.ToString()));
+                    CreateSubstitutions();
                 }
-                var cardGroups = Cards.OrderBy(x => x.IntValue).GroupBy(x => x.Value).ToList();
+                if (!jokerChange)
+                {
+                    EvaluateCards(Cards);
+                }
+            }
+
+            public CardHand(List<Card> subCards, int bid)
+            {
+                Bid = bid;
+                Cards = subCards;
+                EvaluateCards(Cards);
+            }
+
+            private void CreateSubstitutions()
+            {
+
+                var idxOfJ = Cards.Select((x, i) => new { x, i })
+                  .Where(x => x.x.Value == "J")
+                  .Select(x => x.i)
+                  .ToList();
+
+                var jCards = Cards.Count(x => x.Value == "J");
+
+                var dCards = Cards.DistinctBy(x => x.Value).ToList().Where(x => x.Value != "J");
+
+
+                foreach (var jidx in idxOfJ)
+                {
+
+                    foreach (var dc in dCards)
+                    {
+                        var subCards = new List<Card>(Cards);
+                        subCards[jidx] = dc;
+                        subCards[jidx].OriginalValue = "J";
+                        Substitutions.Add(new CardHand(subCards, Bid));
+                    }
+                }
+            }
+
+            public void EvaluateCards(List<Card> cards)
+            {
+                var cardGroups = cards.OrderBy(x => x.IntValue).GroupBy(x => x.Value).ToList();
                 FiveOfAKind = cardGroups.Count == 1;
                 FourOfAKind = cardGroups.Count == 2 && cardGroups.Any(x => x.ToList().Count == 4);
                 FullHouse = cardGroups.Count == 2 && cardGroups.Any(x => x.ToList().Count == 3);
@@ -75,37 +178,31 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 TwoPair = cardGroups.Count == 3;
                 OnePair = cardGroups.Count == 4;
                 HighCard = cardGroups.Count == 5;
+                SortKey = string.Join("", Cards.Select(x => SortKeyDictionary[x.OriginalValue]));
             }
             public override string ToString()
             {
                 return string.Join("", Cards) + " " + Bid;
             }
-            //bool CheckFullHouse(List<IGrouping<string,Card>> groups)
-            //{
-            //    if (groups.Count != 2) { return false; }
-            //    if(groups.Any(x => x.ToList().Count == 3) == false) { return false; }
-
-            //    foreach (var group in groups)
-            //    {
-            //        if(group.ToList().Count == 3) { continue; }
-
-            //    }
-            //}
-
         }
         class Card
         {
             public string Value { get; set; }
             public int IntValue { get; set; }
 
-            public Card(string input)
+            public string OriginalValue { get; set; }
+            public Card() { }
+            public Card(string input, bool jokerChange = false)
             {
 
                 Value = input;
+                OriginalValue = Value;
                 var s = input.Replace("A", "14");
                 s = s.Replace("K", "13");
                 s = s.Replace("Q", "12");
-                s = s.Replace("J", "11");
+
+                s = jokerChange ? s.Replace("J", "1") : s.Replace("J", "11");
+
                 s = s.Replace("T", "10");
                 IntValue = int.Parse(s);
             }
