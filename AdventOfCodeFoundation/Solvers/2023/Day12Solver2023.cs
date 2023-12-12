@@ -14,8 +14,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
             {
                 var cRec = conditionRecord.Split(" ").First();
                 groups = conditionRecord.Split(" ").Last().Split(",").Select(int.Parse).ToList();
-                var memoization = new Dictionary<(int wSt, int cGrp), long>();
-                arrangements += FindArrangements(cRec, 0, 0, memoization);
+                var memoization = new Dictionary<(int, int, int), long>();
+                arrangements += FindArrangements(cRec, groups, 0, 0, 0, memoization);
             }
             return arrangements.ToString();
         }
@@ -38,49 +38,65 @@ namespace AdventOfCodeFoundation.Solvers._2023
                     }
                 }
                 groups = lGroups;
-                var memoization = new Dictionary<(int wSt, int cGrp), long>();
-                arrangements += FindArrangements(unfoldedRecord, 0, 0, memoization);
+                var memoization = new Dictionary<(int, int, int), long>();
+                arrangements += FindArrangements(unfoldedRecord, groups, 0, 0, 0, memoization);
             }
             return arrangements.ToString();
         }
-        private long FindArrangements(string currentRecordPart, int windowStart, int currentGroupIdx,
-            Dictionary<(int wSt, int cGrp), long> memoization)
+        private long FindArrangements(string record, List<int> groups,
+            int currentPositionInRecord,
+            int currentGroupPosition,
+            int lengthOfCurrentGroup,
+            Dictionary<(int, int, int), long> memoization)
         {
-            long arrangements = 0;
-            int wStart = windowStart;
-            bool ready = false;
-            if (memoization.ContainsKey((windowStart, currentGroupIdx)))
+            //Terminate - Vi er ved ved enden i rekord
+            if (memoization.ContainsKey((currentPositionInRecord, currentGroupPosition, lengthOfCurrentGroup)))
             {
-                return memoization[(windowStart, currentGroupIdx)];
+                return memoization[(currentPositionInRecord, currentGroupPosition, lengthOfCurrentGroup)];
             }
-            while (!ready && wStart <= currentRecordPart.Length - groups[currentGroupIdx])
+            if (currentPositionInRecord == record.Length)
             {
-                string s = currentRecordPart.Substring(wStart, groups[currentGroupIdx]);
-                var wEnd = wStart + groups[currentGroupIdx];
-                if (!s.Contains('.'))
+                if (currentGroupPosition == groups.Count && lengthOfCurrentGroup == 0)
                 {
-                    if (currentGroupIdx == groups.Count - 1)
+                    return 1L;
+                }
+                else if (currentGroupPosition == groups.Count - 1 && groups[currentGroupPosition] == lengthOfCurrentGroup)
+                {
+                    return 1L;
+                }
+
+                else
+                {
+                    return 0;
+                }
+            }
+            long arrangements = 0;
+            //Vi kan ikke terminere endnu!
+            //Vi kan fylde med . eller #
+            foreach (var c in ".#")
+            {
+                //Hvis det er ? er det lige meget hvad vi fylder med. Ellers er det én af dem.
+                if (record[currentPositionInRecord] == c || record[currentPositionInRecord] == '?')
+                {
+                    //Hvis vi lige har haft en . , er vi ikke i gang med noget, så vi går videre i rekord
+                    if (c == '.' && lengthOfCurrentGroup == 0)
                     {
-                        var sub = currentRecordPart[wEnd..];
-                        if (wEnd == currentRecordPart.Length || sub.Contains("#") == false)
-                        {
-                            arrangements++;
-                        }
+                        arrangements += FindArrangements(record, groups, currentPositionInRecord + 1, currentGroupPosition, 0, memoization);
                     }
-                    else
+                    //Vi afslutter gruppen. Derfor skal vi gå videre i både rekord og gruppe
+                    else if (c == '.' && lengthOfCurrentGroup > 0 && currentGroupPosition < groups.Count && groups[currentGroupPosition] == lengthOfCurrentGroup)
                     {
-                        if (wEnd < currentRecordPart.Length && (currentRecordPart[wEnd] == '.' || currentRecordPart[wEnd] == '?'))
-                        {
-                            arrangements += FindArrangements(currentRecordPart, wEnd + 1, currentGroupIdx + 1, memoization);
-                        }
+                        arrangements += FindArrangements(record, groups, currentPositionInRecord + 1, currentGroupPosition + 1, 0, memoization);
+                    }
+                    //Hvis vi fylder med # så øger vi længden af den gruppe af ødelagte kilder.
+                    else if (c == '#')
+                    {
+                        arrangements += FindArrangements(record, groups, currentPositionInRecord + 1, currentGroupPosition, lengthOfCurrentGroup + 1, memoization);
                     }
                 }
-                if (currentRecordPart[wStart] == '.' || currentRecordPart[wStart] == '?') wStart++;
-                else ready = true;
             }
-            memoization.Add((windowStart, currentGroupIdx), arrangements);
-
-           return arrangements;
+            memoization.Add((currentPositionInRecord, currentGroupPosition, lengthOfCurrentGroup), arrangements);
+            return arrangements;
         }
     }
 }
