@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AdventOfCodeFoundation.Extensions
 {
@@ -50,5 +51,36 @@ namespace AdventOfCodeFoundation.Extensions
             }
             return map;
         }
+        public static long ComputeHash(this char[,] map)
+        {
+
+            long p = 16777619;
+            long hash = 2166136261;
+
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    hash = (hash ^ map[i, j] ^ (i * j)) * p;
+                }
+            }
+
+            hash += hash << 13;
+            hash ^= hash >> 7;
+            hash += hash << 3;
+            hash ^= hash >> 17;
+            hash += hash << 5;
+
+            return hash;
+        }
+    }
+
+    public enum Direction
+    {
+        North,
+        South,
+        West,
+        East,
+        Unknown,
     }
 }
