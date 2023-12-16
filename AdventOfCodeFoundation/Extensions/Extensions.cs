@@ -40,6 +40,28 @@ namespace AdventOfCodeFoundation.Extensions
             }
             return map;
         }
+        public static char[,] InitializeMap(this char[,] map, char[,] otherMap)
+        {
+            for (int i = 0; i < otherMap.GetLength(0); i++)
+            {
+                for (int j = 0; j < otherMap.GetLength(1); j++)
+                {
+                    map[i, j] = otherMap[i,j];
+                }
+            }
+            return map;
+        }
+        public static string[,] InitializeMap(this string[,] map, string[] otherMap)
+        {
+            for (int i = 0; i < otherMap.Length; i++)
+            {
+                for (int j = 0; j < otherMap[i].Length; j++)
+                {
+                    map[i, j] = otherMap[i][j].ToString();
+                }
+            }
+            return map;
+        }
         public static T[,] InitializeMapWithValue<T>(this T[,] map, T val)
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -72,6 +94,32 @@ namespace AdventOfCodeFoundation.Extensions
             hash += hash << 5;
 
             return hash;
+        }
+        public static void Print(this char[,] map)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    sb.Append(map[i, j] + " ");
+                }
+                sb.AppendLine();
+            }
+            Console.WriteLine(sb.ToString());
+        }
+        public static void Print(this string[,] map)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    sb.Append(" "+map[i, j] + " ");
+                }
+                sb.AppendLine();
+            }
+            Console.WriteLine(sb.ToString());
         }
     }
 
