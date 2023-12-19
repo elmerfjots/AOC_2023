@@ -1,4 +1,5 @@
-﻿using AdventOfCodeFoundation.Extensions;
+﻿using AdventOfCodeFoundation.Common;
+using AdventOfCodeFoundation.Extensions;
 using AdventOfCodeFoundation.IO;
 
 namespace AdventOfCodeFoundation.Solvers._2023

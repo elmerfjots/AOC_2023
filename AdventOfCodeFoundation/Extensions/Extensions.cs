@@ -46,7 +46,7 @@ namespace AdventOfCodeFoundation.Extensions
             {
                 for (int j = 0; j < otherMap.GetLength(1); j++)
                 {
-                    map[i, j] = otherMap[i,j];
+                    map[i, j] = otherMap[i, j];
                 }
             }
             return map;
@@ -62,6 +62,29 @@ namespace AdventOfCodeFoundation.Extensions
             }
             return map;
         }
+        public static string[,] InitializeMap(this string[,] map, int[,] otherMap)
+        {
+            for (int i = 0; i < otherMap.GetLength(0); i++)
+            {
+                for (int j = 0; j < otherMap.GetLength(1); j++)
+                {
+                    map[i, j] = otherMap[i,j].ToString();
+                }
+            }
+            return map;
+        }
+        public static int[,] InitializeMap(this int[,] map, string[] otherMap)
+        {
+            for (int i = 0; i < otherMap.Length; i++)
+            {
+                for (int j = 0; j < otherMap[i].Length; j++)
+                {
+                    map[i, j] = int.Parse(otherMap[i][j].ToString());
+                }
+            }
+            return map;
+        }
+     
         public static T[,] InitializeMapWithValue<T>(this T[,] map, T val)
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -115,7 +138,7 @@ namespace AdventOfCodeFoundation.Extensions
             {
                 for (int j = 0; j < map.GetLength(1); j++)
                 {
-                    sb.Append(" "+map[i, j] + " ");
+                    sb.Append(" " + map[i, j] + " ");
                 }
                 sb.AppendLine();
             }
@@ -123,12 +146,5 @@ namespace AdventOfCodeFoundation.Extensions
         }
     }
 
-    public enum Direction
-    {
-        North,
-        South,
-        West,
-        East,
-        Unknown,
-    }
+   
 }
