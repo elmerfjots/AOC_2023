@@ -103,13 +103,5 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var split = input.Split(", ");
             return (split[0].Replace("(", "").Trim(), split[1].Replace(")", "").Trim());
         }
-        class Node
-        {
-
-            public Node(string input)
-            {
-
-            }
-        }
     }
 }

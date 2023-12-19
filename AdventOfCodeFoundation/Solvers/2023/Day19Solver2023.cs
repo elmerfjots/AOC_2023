@@ -12,33 +12,10 @@ namespace AdventOfCodeFoundation.Solvers._2023
         {
             var raw = await input.GetRawInput();
             var rawSplit = raw.Split("\r\n\r\n");
-
             var workflows = rawSplit[0].Split("\r\n").Select(x => new Workflow(x)).ToDictionary(x => x.Id);
             var rulesInputString = rawSplit[1].Split("\r\n");
             var ruleInputs = rulesInputString.Select(x => new RuleInput(x)).ToList();
-            var sum = 0L;
-            foreach (var ruleInput in ruleInputs)
-            {
-                var currentWorkFlow = workflows.First().Value;
-                while (true)
-                {
-                    var e = currentWorkFlow.EvaluateRule(ruleInput);
-                    if (workflows.ContainsKey(e))
-                    {
-                        currentWorkFlow = workflows[e];
-                    }
-                    else if (e == "R")
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        //Accepted
-                        sum += ruleInput.Score;
-                    }
-
-                }
-            }
+            var sum = ruleInputs.Where(x => RuleInputAccepted(ref workflows, x)).Sum(x => x.Score);
             return sum.ToString();
         }
 
@@ -48,11 +25,31 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             return "";
         }
-
+        private bool RuleInputAccepted(ref Dictionary<string, Workflow> workflows, RuleInput ruleInput)
+        {
+            var currentWorkFlow = workflows.First(x => x.Key == "in").Value;
+            while (true)
+            {
+                var e = currentWorkFlow.EvaluateRule(ruleInput);
+                if (workflows.ContainsKey(e))
+                {
+                    currentWorkFlow = workflows[e];
+                }
+                else if (e == "R")
+                {
+                    return false;
+                }
+                else
+                {
+                    //Accepted
+                    return true;
+                }
+            }
+        }
         class Workflow
         {
             public string Id { get; set; }
-            public List<string> Rules { get; set; }
+            public List<(char lh, long rh, string op, string trueKey)> Rules { get; set; }
             public string DefaultId { get; set; }
             public string InputString { get; set; }
             public Workflow(string input)
@@ -60,15 +57,53 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 var s1 = input.Split("{");
                 var s2 = s1[1];
                 var rulesString = s2.Split(",");
-                Rules = rulesString.Take(rulesString.Length - 1).ToList();
+                var rules = rulesString.Take(rulesString.Length - 1).ToList();
+                Rules = new List<(char lh, long rh, string op, string trueKey)>();
+                foreach (var rule in rules)
+                {
+                    var lhrh = rule.Split(":");
+                    var op = string.Empty;
+                    var trueKey = lhrh[1];
+                    var lh = '#';
+                    var rh = 0L;
+                    if (lhrh[0].Contains("<"))
+                    {
+                        op = "<";
+                        lh = lhrh[0].Split("<")[0].First();
+                        rh = long.Parse(lhrh[0].Split("<")[1]);
+                    }
+                    if (lhrh[0].Contains(">"))
+                    {
+                        op = ">";
+                        lh = lhrh[0].Split(">")[0].First();
+                        rh = long.Parse(lhrh[0].Split(">")[1]);
+                    }
+                    Rules.Add((lh, rh, op, trueKey));
+                }
+
+
+
                 DefaultId = rulesString.Last().Trim('}');
                 Id = s1[0];
                 InputString = input;
             }
             public string EvaluateRule(RuleInput ruleInput)
             {
-                //IF block
-                return "A";
+                foreach (var rule in Rules)
+                {
+                    (char lh, long rh, string op, string trueKey) = rule;
+                    var lhValue = ruleInput.Values[lh];
+
+                    if (op == "<" && lhValue < rh)
+                    {
+                        return trueKey;
+                    }
+                    if (op == ">" && lhValue > rh)
+                    {
+                        return trueKey;
+                    }
+                }
+                return DefaultId;
             }
             public override string ToString()
             {
@@ -85,12 +120,21 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 m = long.Parse(inSplit[1].Replace("m=", "").Trim());
                 a = long.Parse(inSplit[2].Replace("a=", "").Trim());
                 s = long.Parse(inSplit[3].Substring(0, inSplit[3].Length - 1).Replace("s=", "").Trim());
+                Values = new Dictionary<char, long>
+                {
+                    { 'x', x },
+                    { 'm', m },
+                    { 'a', a },
+                    { 's', s }
+                };
             }
 
             public long x { get; set; }
             public long m { get; set; }
             public long a { get; set; }
             public long s { get; set; }
+
+            public Dictionary<char, long> Values { get; set; }
             public long Score
             {
                 get

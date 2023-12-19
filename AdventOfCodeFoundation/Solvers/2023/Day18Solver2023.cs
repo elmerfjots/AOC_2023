@@ -1,4 +1,5 @@
-﻿using AdventOfCodeFoundation.Extensions;
+﻿using AdventOfCodeFoundation.Common;
+using AdventOfCodeFoundation.Extensions;
 using AdventOfCodeFoundation.IO;
 using System.Data;
 using System.Text;
