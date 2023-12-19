@@ -1,8 +1,4 @@
 ﻿using AdventOfCodeFoundation.IO;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Cryptography;
-using System.Threading;
 
 namespace AdventOfCodeFoundation.Solvers._2023
 {
@@ -26,18 +22,23 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var rawSplit = raw.Split("\r\n\r\n");
             var workflows = rawSplit[0].Split("\r\n").Select(x => new Workflow(x)).ToDictionary(x => x.Id);
             var rulesInputString = rawSplit[1].Split("\r\n");
-            var ruleInputs = rulesInputString.Select(x => new RuleInput(1, 4000)).ToList();
-
-            var q = new Queue<(string key, int xl, int xh, int ml, int mh, int al, int ah, int sl, int sh)>();
-            q.Enqueue(("in", 1, 4000, 1, 4000, 1, 4000, 1, 4000));
+            var ruleQueue = new Queue<(string key, RuleInput rIn)>();
+            ruleQueue.Enqueue(("in", new RuleInput(1, 4000)));
             long sum = 0;
-            while (q.Any())
+            while (ruleQueue.Any())
             {
-                (string key, int xl, int xh, int ml, int mh, int al, int ah, int sl, int sh) = q.Dequeue();
-                if (xl > xh || ml > mh || al > ah || sl > sh) { continue; }
+                (string key, RuleInput rIn) = ruleQueue.Dequeue();
+                if (rIn.LowHighs.xl > rIn.LowHighs.xh ||
+                    rIn.LowHighs.ml > rIn.LowHighs.mh ||
+                    rIn.LowHighs.al > rIn.LowHighs.ah ||
+                    rIn.LowHighs.sl > rIn.LowHighs.sh)
+                { continue; }
                 if (key == "A")
                 {
-                    sum += (xh - (long)xl + 1) * (mh - (long)ml + 1) * (ah - (long)al + 1) * (sh - (long)sl + 1);
+                    sum += (rIn.LowHighs.xh - rIn.LowHighs.xl + 1) *
+                        (rIn.LowHighs.mh - rIn.LowHighs.ml + 1) *
+                        (rIn.LowHighs.ah - rIn.LowHighs.al + 1) *
+                        (rIn.LowHighs.sh - rIn.LowHighs.sl + 1);
                     continue;
                 }
                 else if (key == "R") { continue; }
@@ -46,17 +47,18 @@ namespace AdventOfCodeFoundation.Solvers._2023
                     var workflow = workflows[key];
                     foreach (var rule in workflow.Rules)
                     {
-                        var n = GetNewRanges(rule.lh, rule.op, rule.rh, xl, xh, ml, mh, al, ah, sl, sh);
-                        q.Enqueue((rule.trueKey, n.xl, n.xh, n.ml, n.mh, n.al, n.ah, n.sl, n.sh));
+                        var newRanges = GetNewRanges(rule.lh, rule.op, rule.rh, rIn.LowHighs.xl, rIn.LowHighs.xh, rIn.LowHighs.ml, rIn.LowHighs.mh, rIn.LowHighs.al, rIn.LowHighs.ah, rIn.LowHighs.sl, rIn.LowHighs.sh);
+                        var rInNew = new RuleInput(newRanges);
+                        ruleQueue.Enqueue((rule.trueKey, rInNew));
 
                         //Negation of operators
                         var newOp = rule.op == ">" ? "<=" : ">=";
 
-                        var nn = GetNewRanges(rule.lh, newOp, rule.rh, xl, xh, ml, mh, al, ah, sl, sh);
-                        xl = nn.xl; xh = nn.xh; ml = nn.ml; mh = nn.mh; al = nn.al; ah = nn.ah; sl = nn.sl; sh = nn.sh;
+                        var nn = GetNewRanges(rule.lh, newOp, rule.rh, rIn.LowHighs.xl, rIn.LowHighs.xh, rIn.LowHighs.ml, rIn.LowHighs.mh, rIn.LowHighs.al, rIn.LowHighs.ah, rIn.LowHighs.sl, rIn.LowHighs.sh);
+                        rIn.LowHighs = (nn.xl, nn.xh, nn.ml, nn.mh, nn.al, nn.ah, nn.sl, nn.sh);
                     }
 
-                    q.Enqueue((workflow.DefaultId, xl, xh, ml, mh, al, ah, sl, sh));
+                    ruleQueue.Enqueue((workflow.DefaultId, rIn));
                 }
 
 
@@ -64,8 +66,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             return sum.ToString();
         }
-        private (int xl, int xh, int ml, int mh, int al, int ah, int sl, int sh) GetNewRanges
-            (char lh, string op, int rh, int xl, int xh, int ml, int mh, int al, int ah, int sl, int sh)
+        private (long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh) GetNewRanges
+            (char lh, string op, long rh, long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh)
         {
             switch (lh)
             {
@@ -85,7 +87,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
             }
             return (xl, xh, ml, mh, al, ah, sl, sh);
         }
-        private (int low, int high) GetNewRange(string op, int n, int lo, int hi)
+        private (long low, long high) GetNewRange(string op, long n, long lo, long hi)
         {
             switch (op)
             {
@@ -210,13 +212,17 @@ namespace AdventOfCodeFoundation.Solvers._2023
             {
                 LowHighs = (low, high, low, high, low, high, low, high);
             }
+            public RuleInput((long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh) newLowHigh)
+            {
+                LowHighs = newLowHigh;
+            }
 
             public long x { get; set; }
             public long m { get; set; }
             public long a { get; set; }
             public long s { get; set; }
 
-            public (int xl, int xh, int ml, int mh, int al, int ah, int sl, int sh) LowHighs { get; set; }
+            public (long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh) LowHighs { get; set; }
 
             public Dictionary<char, long> Values { get; set; }
             public long Score
@@ -229,6 +235,18 @@ namespace AdventOfCodeFoundation.Solvers._2023
             public override string ToString()
             {
                 return $"x={x}, m={m}, a={a}, s={s}";
+            }
+            class Xmas
+            {
+                public long Xlow { get; set; }
+                public long Xhigh { get; set; }
+                public long Mlow { get; set; }
+                public long Mhigh { get; set; }
+                public long Alow { get; set; }
+                public long Ahigh { get; set; }
+                public long SHigh { get; set; }
+                public long SLow { get; set; }
+
             }
         }
 
