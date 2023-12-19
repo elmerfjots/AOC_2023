@@ -17,7 +17,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var queue = new PriorityQueue<Path, int>();
             var visited = new HashSet<string>();
 
-            queue.Enqueue(new Path(new(0, 0), Direction.Right, 0), 0);
+            queue.Enqueue(new Path(new(0, 0), Direction.East, 0), 0);
 
             var totalHeat = 0;
 
@@ -52,7 +52,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
             var queue = new PriorityQueue<Path, int>();
             var visited = new HashSet<string>();
 
-            queue.Enqueue(new Path(new(0, 0), Direction.Down, 0), 0);
+            queue.Enqueue(new Path(new(0, 0), Direction.South, 0), 0);
 
             var totalHeat = 0;
 
@@ -81,15 +81,15 @@ namespace AdventOfCodeFoundation.Solvers._2023
         }
         void TryMove(Path path, Direction direction, ref HashSet<string> visited, ref PriorityQueue<Path, int> queue, ref int[,] map)
         {
-            var candidate = new Path(path.Position.Move(direction), direction, direction == path.Direction ? path.Distance + 1 : 1);
+            var node = new Path(path.Position.Move(direction), direction, direction == path.Direction ? path.Distance + 1 : 1);
 
-            if (candidate.Position.Row < 0 || candidate.Position.Row >= map.GetLength(0) ||
-                candidate.Position.Col < 0 || candidate.Position.Col >= map.GetLength(1))
+            if (node.Position.Row < 0 || node.Position.Row >= map.GetLength(0) ||
+                node.Position.Col < 0 || node.Position.Col >= map.GetLength(1))
             {
                 return;
             }
 
-            var key = $"{candidate.Position.Row},{candidate.Position.Col},{candidate.Direction.Row},{candidate.Direction.Col},{candidate.Distance}";
+            var key = $"{node.Position.Row},{node.Position.Col},{node.Direction.Row},{node.Direction.Col},{node.Distance}";
             if (visited.Contains(key))
             {
                 return;
@@ -97,8 +97,8 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             visited.Add(key);
 
-            candidate.Heat = path.Heat + map[candidate.Position.Row, candidate.Position.Col];
-            queue.Enqueue(candidate, candidate.Heat);
+            node.Heat = path.Heat + map[node.Position.Row, node.Position.Col];
+            queue.Enqueue(node, node.Heat);
         }
         internal class Path(Position position, Direction direction, int distance)
         {
@@ -123,10 +123,10 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 return new Direction(Col, -Row);
             }
 
-            public static Direction Up = new(-1, 0);
-            public static Direction Down = new(1, 0);
-            public static Direction Left = new(0, -1);
-            public static Direction Right = new(0, 1);
+            public static Direction North = new(-1, 0);
+            public static Direction South = new(1, 0);
+            public static Direction West = new(0, -1);
+            public static Direction East = new(0, 1);
         }
 
         internal class Position(int row, int col)
