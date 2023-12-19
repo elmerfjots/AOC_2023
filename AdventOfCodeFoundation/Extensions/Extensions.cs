@@ -96,6 +96,16 @@ namespace AdventOfCodeFoundation.Extensions
             }
             return map;
         }
+        public static void InitializeMapWithValue2<T>(this T[,] map, T val)
+        {
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    map[i, j] = val;
+                }
+            }
+        }
         public static long ComputeHash(this char[,] map)
         {
 
