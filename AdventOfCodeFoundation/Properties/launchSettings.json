@@ -1,7 +1,8 @@
 {
   "profiles": {
     "AdventOfCodeFoundation": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "19-12-2023"
     }
   }
 }

@@ -55,7 +55,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                         var newOp = rule.op == ">" ? "<=" : ">=";
 
                         var nn = GetNewRanges(rule.lh, newOp, rule.rh, rIn.LowHighs.xl, rIn.LowHighs.xh, rIn.LowHighs.ml, rIn.LowHighs.mh, rIn.LowHighs.al, rIn.LowHighs.ah, rIn.LowHighs.sl, rIn.LowHighs.sh);
-                        rIn.LowHighs = (nn.xl, nn.xh, nn.ml, nn.mh, nn.al, nn.ah, nn.sl, nn.sh);
+                        rIn.LowHighs = (nn.Xlow, nn.Xhigh, nn.Mlow, nn.Mhigh, nn.Alow, nn.Ahigh, nn.SLow, nn.SHigh);
                     }
 
                     ruleQueue.Enqueue((workflow.DefaultId, rIn));
@@ -66,7 +66,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             return sum.ToString();
         }
-        private (long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh) GetNewRanges
+        private XmasRange GetNewRanges
             (char lh, string op, long rh, long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh)
         {
             switch (lh)
@@ -85,7 +85,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
                     break;
                 default: throw new Exception("No!");
             }
-            return (xl, xh, ml, mh, al, ah, sl, sh);
+            return new XmasRange((xl, xh, ml, mh, al, ah, sl, sh));
         }
         private (long low, long high) GetNewRange(string op, long n, long lo, long hi)
         {
@@ -216,7 +216,11 @@ namespace AdventOfCodeFoundation.Solvers._2023
             {
                 LowHighs = newLowHigh;
             }
-
+            public RuleInput(XmasRange xr)
+            {
+                LowHighs = (xr.Xlow, xr.Xhigh, xr.Mlow, xr.Mhigh, xr.Alow, xr.Ahigh, xr.SLow, xr.SHigh);
+            }
+            private XmasRange Xr { get; set; }
             public long x { get; set; }
             public long m { get; set; }
             public long a { get; set; }
@@ -236,19 +240,30 @@ namespace AdventOfCodeFoundation.Solvers._2023
             {
                 return $"x={x}, m={m}, a={a}, s={s}";
             }
-            class Xmas
-            {
-                public long Xlow { get; set; }
-                public long Xhigh { get; set; }
-                public long Mlow { get; set; }
-                public long Mhigh { get; set; }
-                public long Alow { get; set; }
-                public long Ahigh { get; set; }
-                public long SHigh { get; set; }
-                public long SLow { get; set; }
 
-            }
         }
+        class XmasRange
+        {
+            public XmasRange((long xl, long xh, long ml, long mh, long al, long ah, long sl, long sh) value)
+            {
+                Xlow = value.xl;
+                Xhigh = value.xh;
+                Mlow = value.ml;
+                Mhigh = value.mh;
+                Alow = value.al;
+                Ahigh = value.ah;
+                SLow = value.sl;
+                SHigh = value.sh;
+            }
 
+            public long Xlow { get; set; }
+            public long Xhigh { get; set; }
+            public long Mlow { get; set; }
+            public long Mhigh { get; set; }
+            public long Alow { get; set; }
+            public long Ahigh { get; set; }
+            public long SHigh { get; set; }
+            public long SLow { get; set; }
+        }
     }
 }
