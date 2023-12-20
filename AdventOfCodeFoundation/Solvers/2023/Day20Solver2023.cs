@@ -18,15 +18,15 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
             for (int i = 0; i < 1000; i++)
             {
-                modules["broadcaster"].incomingPulses.Enqueue(("button", false));
+                modules["broadcaster"].IncomingPulses.Enqueue(("button", false));
                 processOrder.Enqueue("broadcaster");
 
                 while (processOrder.Any())
                 {
                     var pulseDest = processOrder.Dequeue();
-                    (long pulsesSent, bool pulseVal) = modules[pulseDest].DoPulse(ref modules, ref processOrder);
+                    (long pulsesSent, bool isHighPulse) = modules[pulseDest].DoPulse(ref modules, ref processOrder);
 
-                    if (pulseVal) highPulses += pulsesSent;
+                    if (isHighPulse) highPulses += pulsesSent;
                     else lowPulses += pulsesSent;
                 }
             }
@@ -40,7 +40,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
             InitialzeModules(ref modules, ref inputRaw, out string rx);
             var processOrder = new Queue<string>();
             var rxDests = modules.Values
-                                    .Where(a => a.outputs.Contains(rx))
+                                    .Where(a => a.DestinationPulses.Contains(rx))
                                     .ToDictionary(m => m.Key, m => 0L);
 
             foreach (var m in modules.Values) m.Reset();
@@ -48,7 +48,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
             while (true)
             {
                 cnt++;
-                modules["broadcaster"].incomingPulses.Enqueue(("button", false));
+                modules["broadcaster"].IncomingPulses.Enqueue(("button", false));
                 processOrder.Enqueue("broadcaster");
 
                 while (processOrder.Any())
@@ -76,15 +76,15 @@ namespace AdventOfCodeFoundation.Solvers._2023
 
                 var type = lhrh[0].Contains("&") ? ModuleType.Conjunction :
                   lhrh[0].Contains("%") ? ModuleType.FlipFlop :
-                  lhrh[0].Equals("broadcaster") ? ModuleType.Broadcast :
+                  lhrh[0].Equals("broadcaster") ? ModuleType.Broadcaster :
                   ModuleType.Unknown;
 
                 var currentModule = GetKey(lhrh[0]);
                 modules[currentModule].Type = type;
                 foreach (var dest in lhrh[1].Split(", "))
                 {
-                    modules[currentModule].outputs.Add(dest);
-                    modules[dest].lastReceivedPulses[currentModule] = false;
+                    modules[currentModule].DestinationPulses.Add(dest);
+                    modules[dest].PulseMemory[currentModule] = false;
                     if (dest == "rx") rx = currentModule;
                 }
 
@@ -110,18 +110,18 @@ namespace AdventOfCodeFoundation.Solvers._2023
         private class Module
         {
             public required string Key { get; set; }
-            public ModuleType Type = ModuleType.Unknown;
-            public bool flipFlopState = false;
-            public Dictionary<string, bool> lastReceivedPulses = new();
-            public Queue<(string source, bool pulse)> incomingPulses = new();
-            public List<string> outputs = new();
+            public ModuleType Type { get; set; } = ModuleType.Unknown;
+            public bool FlipFlopState { get; set; } = false;
+            public List<string> DestinationPulses { get; set; } = new List<string>();
+            public Dictionary<string, bool> PulseMemory { get; set; } = new Dictionary<string, bool>();
+            public Queue<(string source, bool pulse)> IncomingPulses { get; set; } = new Queue<(string source, bool pulse)>();
 
             public void Reset()
             {
-                flipFlopState = false;
-                foreach (var k in lastReceivedPulses.Keys)
+                FlipFlopState = false;
+                foreach (var k in PulseMemory.Keys)
                 {
-                    lastReceivedPulses[k] = false;
+                    PulseMemory[k] = false;
                 }
             }
 
@@ -130,47 +130,47 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 long pulsesSent = 0;
                 bool isHighPulse = false;
 
-                if (incomingPulses.TryDequeue(out var p))
+                if (IncomingPulses.Count != 0)
                 {
-                    (var src, var pulse) = p;
-                    if (Type == ModuleType.FlipFlop)
+                    var incPulse = IncomingPulses.Dequeue();
+                    (var src, var pulse) = incPulse;
+                    if (Type == ModuleType.Broadcaster)
+                    {
+                        isHighPulse = pulse;
+                        foreach (var n in DestinationPulses)
+                        {
+                            modules[n].IncomingPulses.Enqueue((Key, isHighPulse));
+                            processOrder.Enqueue(n);
+                            pulsesSent++;
+                        }
+                    }
+                    else if (Type == ModuleType.FlipFlop)
                     {
                         if (!pulse)
                         {
-
-                            flipFlopState = !flipFlopState;
-                            foreach (var n in outputs)
+                            FlipFlopState = !FlipFlopState;
+                            foreach (var n in DestinationPulses)
                             {
-                                modules[n].incomingPulses.Enqueue((Key, flipFlopState));
+                                modules[n].IncomingPulses.Enqueue((Key, FlipFlopState));
                                 processOrder.Enqueue(n);
                                 pulsesSent++;
                             }
-
-                            isHighPulse = flipFlopState;
+                            isHighPulse = FlipFlopState;
                         }
                     }
                     else if (Type == ModuleType.Conjunction)
                     {
-                        lastReceivedPulses[src] = pulse;
-                        isHighPulse = lastReceivedPulses.Values.Any(a => !a);
+                        PulseMemory[src] = pulse;
+                        isHighPulse = PulseMemory.Values.Any(a => !a);
 
-                        foreach (var n in outputs)
+                        foreach (var n in DestinationPulses)
                         {
-                            modules[n].incomingPulses.Enqueue((Key, isHighPulse));
+                            modules[n].IncomingPulses.Enqueue((Key, isHighPulse));
                             processOrder.Enqueue(n);
                             pulsesSent++;
                         }
                     }
-                    else if (Type == ModuleType.Broadcast)
-                    {
-                        isHighPulse = pulse;
-                        foreach (var n in outputs)
-                        {
-                            modules[n].incomingPulses.Enqueue((Key, isHighPulse));
-                            processOrder.Enqueue(n);
-                            pulsesSent++;
-                        }
-                    }
+
                 }
                 return (pulsesSent, isHighPulse);
             }
@@ -180,7 +180,7 @@ namespace AdventOfCodeFoundation.Solvers._2023
         {
             FlipFlop,
             Conjunction,
-            Broadcast,
+            Broadcaster,
             Unknown
         }
     }
