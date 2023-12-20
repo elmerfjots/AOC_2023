@@ -1,4 +1,5 @@
 ﻿using AdventOfCodeFoundation.IO;
+using AdventOfCodeFoundation.Common;
 namespace AdventOfCodeFoundation.Solvers._2023
 {
     [Solves("2023/12/8")]
@@ -78,26 +79,14 @@ namespace AdventOfCodeFoundation.Solvers._2023
                 }
                 // determine smallest common multiplier
                 var (a, b) = steps > cnt ? (steps, cnt) : (cnt, steps);
-                var lcm = LCM(a, b);
+                var lcm = AOCMath.LCM(a, b);
                 steps = lcm;
+
             }
             return steps.ToString();
         }
         //https://stackoverflow.com/questions/13569810/least-common-multiple
-        private long GCF(long a, long b)
-        {
-            while (b != 0)
-            {
-                long temp = b;
-                b = a % b;
-                a = temp;
-            }
-            return a;
-        }
-        private long LCM(long a, long b)
-        {
-            return (a / GCF(a, b)) * b;
-        }
+
         public (string left, string right) StringToTupleValue(string input)
         {
             var split = input.Split(", ");
